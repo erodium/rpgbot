@@ -7,6 +7,7 @@ import sqlite3 as sql
 import configparser
 from setup_db import setup_db
 from pathlib import Path
+from random import randrange
 
 
 def connect_to_db(config):
@@ -14,6 +15,16 @@ def connect_to_db(config):
     logger.info(f"Connecting to database at {dbfile}.")
     con = sql.connect(dbfile)
     return con
+
+
+def get_greeting():
+    greeting = ""
+    with open('../assets/greetings.txt') as f:
+        lines = f.readlines()
+        total_lines = len(lines)
+        linenum = randrange(total_lines)
+        greeting = lines[linenum]
+    return(greeting)
 
 
 class RPGBot(discord.Client):
@@ -52,7 +63,8 @@ class RPGBot(discord.Client):
         ###
         if message.content.startswith('$'):
             if message.content.startswith('$hello'):
-                await message.channel.send('Hello!')
+                greeting = get_greeting().replace("$USER$", message.author.display_name)
+                await message.channel.send(greeting)
             elif message.content.startswith('$register'):
                 print('register')
             elif message.content.startswith('$list'):

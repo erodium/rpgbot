@@ -1,0 +1,35 @@
+Hello $USER$.
+Good morning $USER$.
+Good afternoon $USER$.
+Good evening $USER$.
+How are you, $USER$?
+How are you doing, $USER$?
+Nice to meet you $USER$
+It’s nice to meet you $USER$
+I’m pleased to meet you, $USER$.
+It’s a pleasure to meet you, $USER$.
+I’m glad to see you, $USER$.
+$USER$! How do you do?
+Hi $USER$.
+Hey $USER$.
+What’s up, $USER$?
+$USER$, what's up!?
+How’s it going, $USER$?
+$USER$, how's it going?!
+How have you been, $USER$?
+$USER$! How have you been?
+What’s new, $USER$?
+What’s going on, $USER$?
+How are things, $USER$?
+How’s your day, $USER$?
+Hi $USER$. How’s your day going?
+Good to see you, $USER$.
+Long time no see, $USER$.
+It’s been a while, $USER$.
+It’s been a long time, $USER$.
+$USER$! It’s been such a long time.
+$USER$. It’s been too long.
+I’m so happy to see you again, $USER$.
+Wow, it’s so good to see you again, $USER$!
+$USER$! What have you been up to?
+$USER$. How's it hanging?
