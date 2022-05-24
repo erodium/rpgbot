@@ -4,16 +4,26 @@ import logging
 from dotenv import load_dotenv
 import d20
 import sqlite3 as sql
+import configparser
+from setup_db import setup_db
+from pathlib import Path
 
 
-def connect_to_db():
-    con = sql.connect(os.getenv('DB_FILENAME'))
+def connect_to_db(config):
+    dbfile = config['db']['filename']
+    logger.info(f"Connecting to database at {dbfile}.")
+    con = sql.connect(dbfile)
     return con
 
 
 class RPGBot(discord.Client):
     def __init__(self, *args, **kwargs):
-        self.con = connect_to_db()
+        self.config = configparser.ConfigParser()
+        self.config.read('config.ini')
+        p = Path(self.config['db']['filename'])
+        if not p.exists():
+            setup_db(self.config)
+        self.con = connect_to_db(self.config)
         self.game_mode = self.get_game_mode_from_db()
         print(f"Setting game mode to {self.game_mode}.")
         intents = discord.Intents.default()
@@ -22,8 +32,10 @@ class RPGBot(discord.Client):
 
     def change_game_mode(self, new_mode=None):
         if new_mode:
+            old = self.game_mode
+            logger.info(f"Changing game mode from {old} to {new_mode}")
             self.game_mode = new_mode
-            q = f"UPDATE {os.getenv('GAMEMODE_TABLENAME')} SET value={new_mode} where ID=1;"
+            q = f"UPDATE {self.config['db-tables']['gamemode']} SET value='{new_mode}' where id=1;"
             with self.con:
                 self.con.execute(q)
             self.con.close()
@@ -70,7 +82,7 @@ class RPGBot(discord.Client):
 
     def get_game_mode_from_db(self):
         with self.con:
-            q = f"SELECT value FROM {os.getenv('GAMEMODE_TABLENAME')} WHERE id=1;"
+            q = f"SELECT value FROM {self.config['db-tables']['gamemode']} WHERE id=1;"
             val = self.con.execute(q).fetchone()[0]
             return val
 
