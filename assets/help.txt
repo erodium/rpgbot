@@ -1,0 +1,16 @@
+Welcome to lowerlight's RPGbot! It's nice to see you. This bot is made specifically for Pathfinder 2e.
+
+You can use the bot as follows. There are two main methods of interacting with the bot:
+commands that start with $ and commands that start with !
+
+$ commands: These commands are for player interaction, or direct interaction with the bot. For example, use $ to $list your characters, $register a character, or $end a turn.
+! commands: These commands are for meta-data about the game. For example, use !mode to find out if you're in downtime, or !date to find out when it is in game-time.
+
+Currently, only the following commands are implemented.  If you would like to add or expedite implementation of a command, please message lowerlight.
+
+Commands:
+$hello - greet the bot
+$roll NdX+MOD - Roll N dice with X sides, add MOD to the result. Follows the d20 syntax https://d20.readthedocs.io/en/latest/start.html#numbers
+
+!help - See this message.
+!mode - Find out what mode the game is currently in, whether downtime, exploration, or encounter mode.
