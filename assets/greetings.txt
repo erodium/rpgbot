@@ -33,3 +33,8 @@ I’m so happy to see you again, $USER$.
 Wow, it’s so good to see you again, $USER$!
 $USER$! What have you been up to?
 $USER$. How's it hanging?
+May the force be with you, $USER$.
+Live long and prosper, $USER$.
+$USER$! Nanu, Nanu!
+I'm Batman.
+You're a wizard, $USER$.
