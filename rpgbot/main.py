@@ -5,25 +5,25 @@ import os
 import sqlite3 as sql
 from pathlib import Path
 from random import randrange
-
 import d20
 import discord
 import requests
 from dotenv import load_dotenv
-
 from setup_db import setup_db
+from config import ROOT_DIR, CONFIG_FILENAME, DB_PATH, ASSETS_PATH
+from utils import db_name
 
 
 def connect_to_db(config):
-    dbfile = config['db']['filename']
-    logger.info(f"Connecting to database at {dbfile}.")
-    con = sql.connect(dbfile)
+    dbfilename = db_name(config)
+    logger.info(f"Connecting to database at {DB_PATH}/{dbfilename}.")
+    con = sql.connect(DB_PATH / dbfilename)
     return con
 
 
 def get_greeting():
     greeting = ""
-    with open('../assets/greetings.txt') as f:
+    with open(ASSETS_PATH / 'greetings.txt') as f:
         lines = f.readlines()
         total_lines = len(lines)
         linenum = randrange(total_lines)
@@ -62,8 +62,8 @@ def get_quote():
 class RPGBot(discord.Client):
     def __init__(self, *args, **kwargs):
         self.config = configparser.ConfigParser()
-        self.config.read('config.ini')
-        p = Path(self.config['db']['filename'])
+        self.config.read(CONFIG_FILENAME)
+        p = DB_PATH / db_name(self.config)
         if not p.exists():
             setup_db(self.config)
         self.con = connect_to_db(self.config)

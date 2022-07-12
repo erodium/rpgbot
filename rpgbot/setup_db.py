@@ -1,13 +1,14 @@
 import configparser
 import sqlite3 as sql
+from config import ROOT_DIR, CONFIG_FILENAME, DB_PATH
+from utils import db_name
 
 
 def setup_db(config=None):
     if not config:
         config = configparser.ConfigParser()
-        config.read('config.ini')
-
-    con = sql.connect(config['db']['filename'])
+        config.read(CONFIG_FILENAME)
+    con = sql.connect(DB_PATH / db_name(config))
 
     with con:
         con.execute(f"""
