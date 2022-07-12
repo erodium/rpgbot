@@ -51,7 +51,7 @@ def check_pathbuilder_json_uri(uri):
 
 
 def get_quote():
-    with open('../assets/quotes.txt') as f:
+    with open(ASSETS_PATH / 'quotes.txt') as f:
         lines = f.readlines()
         total_lines = len(lines)
         linenum = randrange(total_lines)
@@ -163,7 +163,7 @@ class RPGBot(discord.Client):
                 result = d20.roll(to_roll)
                 await message.channel.send(result)
             elif message.content.startswith('$help'):
-                with open('../assets/help.txt') as f:
+                with open(ASSETS_PATH / 'help.txt') as f:
                     msg = f.read()
                 await message.author.send(msg)
             elif message.content.startswith('$mode'):
