@@ -13,6 +13,7 @@ import requests
 from config import ASSETS_PATH
 from config import CONFIG_FILENAME
 from config import DB_PATH
+from config import LIST_OF_CHECKS
 from config import LOG_PATH
 from dotenv import load_dotenv
 from setup_db import setup_db
@@ -101,11 +102,12 @@ class RPGBot(discord.Client):
                 parts = message.content.split()
                 if len(parts) > 1:
                     result, retmsg = self.activate_character(
-                        parts[1], message.author.id,
+                        ' '.join(parts[1:]), message.author.id,
                     )
                     if result:
                         await message.channel.send(
-                            f'{parts[1]} is now your active character.',
+                            f'{" ".join(parts[1:])} is now your '
+                            f'active character.',
                         )
                     else:
                         if retmsg == 'CannotFind':
@@ -115,8 +117,9 @@ class RPGBot(discord.Client):
                         elif retmsg == 'NoChars':
                             msg = "You don't have any registered characters."
                         else:
-                            msg = f"Something went wrong. I couldn't " \
-                                  f'make {parts[1]} your active character.'
+                            msg = f"Something went wrong. I couldn't make " \
+                                  f"{' '.join(parts[1:])} your active " \
+                                  f'character.'
                         await message.channel.send(msg)
                 else:
                     await message.channel.send(
@@ -148,6 +151,11 @@ class RPGBot(discord.Client):
                     await message.channel.send(
                         f"Couldn't find {parts[1]} for {active_char_name}",
                     )
+            elif message.content.startswith('$check '):
+                parts = message.content.split()
+                if parts[1] in LIST_OF_CHECKS:
+                    result = self.roll_check(message.author.id, parts[1])
+                    await message.channel.send(result)
             elif message.content == '$flat':
                 active_char_name = self.get_active_char_from_db(
                     message.author.id,
@@ -232,8 +240,30 @@ class RPGBot(discord.Client):
             elif message.content.startswith('$roll ') \
                     or message.content.startswith('$r '):
                 to_roll = message.content.split()[1]
-                result = d20.roll(to_roll)
+                if any(i.isdigit() for i in to_roll):
+                    result = d20.roll(to_roll)
+                else:
+                    result = self.roll_check(to_roll)
                 await message.channel.send(result)
+            elif message.content.startswith('$st '):
+                parts = message.content.split()
+                if parts[1] in ['will', 'ref', 'reflex', 'fort', 'fortitude']:
+                    if parts[1] == 'ref':
+                        f = 'reflex'
+                    elif parts[1] == 'fort':
+                        f = 'fortitude'
+                    else:
+                        f = parts[1]
+                    result = self.roll_check(message.author.id, f)
+                    await message.channel.send(result)
+
+    def roll_check(self, author_id, field):
+        active_char_name = self.get_active_char_from_db(author_id)
+        mod = self.get_character_info(
+            author_id, active_char_name, field,
+        )
+        result = d20.roll(f'1d20+{mod}')
+        return result
 
     def activate_character(self, char_name, owner_id):
         new_active_id = None
