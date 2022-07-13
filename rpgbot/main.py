@@ -13,6 +13,7 @@ import requests
 from config import ASSETS_PATH
 from config import CONFIG_FILENAME
 from config import DB_PATH
+from config import LOG_PATH
 from dotenv import load_dotenv
 from setup_db import setup_db
 from utils import db_name
@@ -99,7 +100,7 @@ class RPGBot(discord.Client):
             if message.content.startswith('$activate'):
                 parts = message.content.split()
                 if len(parts) > 1:
-                    result = self.activate_character(
+                    result, retmsg = self.activate_character(
                         parts[1], message.author.id,
                     )
                     if result:
@@ -107,14 +108,21 @@ class RPGBot(discord.Client):
                             f'{parts[1]} is now your active character.',
                         )
                     else:
-                        msg = f"Something went wrong. I couldn't " \
-                              f'make {parts[1]} your active character.'
+                        if retmsg == 'CannotFind':
+                            msg = "Can't find that character in the database."
+                        elif retmsg == 'AlreadyActive':
+                            msg = 'That character is already active.'
+                        elif retmsg == 'NoChars':
+                            msg = "You don't have any registered characters."
+                        else:
+                            msg = f"Something went wrong. I couldn't " \
+                                  f'make {parts[1]} your active character.'
                         await message.channel.send(msg)
                 else:
                     await message.channel.send(
                         'Which character do you want to activate?',
                     )
-            elif message.content.startswith('$active'):
+            elif message.content == '$active':
                 result = self.get_active_char_from_db(message.author.id)
                 if result:
                     await message.channel.send(
@@ -124,7 +132,7 @@ class RPGBot(discord.Client):
                     await message.channel.send(
                         "You don't currently have an active character.",
                     )
-            elif message.content.startswith('$char'):
+            elif message.content.startswith('$char '):
                 parts = message.content.split()
                 active_char_name = self.get_active_char_from_db(
                     message.author.id,
@@ -140,23 +148,27 @@ class RPGBot(discord.Client):
                     await message.channel.send(
                         f"Couldn't find {parts[1]} for {active_char_name}",
                     )
-            elif message.content.startswith('$flat'):
+            elif message.content == '$flat':
                 active_char_name = self.get_active_char_from_db(
                     message.author.id,
                 )
                 self.flatten_character(message.author.id, active_char_name)
-            elif message.content.startswith('$hello'):
+            elif message.content == '$hello' \
+                    or message.content.startswith('$hello '):
                 greeting = get_greeting().replace(
                     '$USER$', message.author.display_name,
                 )
                 logger.info(f'Greeting: {greeting}')
                 await message.channel.send(greeting)
-            elif message.content.startswith('$help'):
+            elif message.content == '$help':
                 p = ASSETS_PATH / 'help.txt'
                 q = ASSETS_PATH / 'changelog.txt'
                 msg = p.read_text() + '\n' + q.read_text()
                 await message.author.send(msg)
-            elif message.content.startswith('$json'):
+            elif message.content.startswith('$help '):
+                pass
+                # placeholder for subcommand help
+            elif message.content == '$json':
                 active_char_name = self.get_active_char_from_db(
                     message.author.id,
                 )
@@ -169,7 +181,7 @@ class RPGBot(discord.Client):
                     await message.channel.send(
                         "You don't have an active character.",
                     )
-            elif message.content.startswith('$list'):
+            elif message.content == '$list':
                 characters = self.get_characters_from_db(message.author.id)
                 if len(characters) == 0:
                     msg = 'You have no characters in the database. ' \
@@ -194,15 +206,15 @@ class RPGBot(discord.Client):
                             f'The game mode is now changed '
                             f'from {old} to {mode}.',
                         )
-                else:
+                elif message.content == '$mode':
                     await message.channel.send(
                         f'Current game mode is: {self.game_mode}',
                     )
-            elif message.content.startswith('$quote'):
+            elif message.content == '$quote':
                 quote = get_quote()
                 logger.info(f'Quote: {quote}')
                 await message.channel.send(quote)
-            elif message.content.startswith('$register'):
+            elif message.content.startswith('$register '):
                 parts = message.content.split()
                 valid_uri = check_pathbuilder_json_uri(parts[1])
                 if valid_uri:
@@ -217,32 +229,50 @@ class RPGBot(discord.Client):
                         'Not a valid URL. '
                         'Please check the !help and try again.',
                     )
-            elif message.content.startswith('$roll') \
+            elif message.content.startswith('$roll ') \
                     or message.content.startswith('$r '):
                 to_roll = message.content.split()[1]
                 result = d20.roll(to_roll)
                 await message.channel.send(result)
 
     def activate_character(self, char_name, owner_id):
+        new_active_id = None
         with self.con:
+            # Get all the owner's characters
             q = f'SELECT id, name, active ' \
                 f"FROM {self.config['db-tables']['characters']} " \
                 f'WHERE owner={owner_id}'
             cur = self.con.execute(q)
             char_list = cur.fetchall()
+            # if there aren't any owned characters
             if len(char_list) == 0:
                 logger.debug(
                     f"Couldn't activate; found no characters in "
                     f'database for {owner_id}.',
                 )
-                return False  # no characters in list
+                return (False, 'NoChars')  # no characters in list
+            # for each character
             for character in char_list:
+                # if we're looking at the current active character (1)
                 if character[2] == 1:
+                    # if the names match
                     if character[1] == char_name:
-                        return False  # already active
+                        # then it's already active
+                        return (False, 'AlreadyActive')
+                    # otherwise names don't match, so log the old active
                     old_active_id = character[0]
+                # otherwise we're looking at a non active character
+                # if this char is the desired active character
                 if character[1] == char_name:
+                    # log the id for the new active character
                     new_active_id = character[0]
+            # if we didn't find the desired active character
+            if not new_active_id:
+                logger.debug(
+                    f"Couldn't find the character {char_name} for {owner_id}.",
+                )
+                return (False, 'CannotFind')  # can't find character name
+            # otherwise we've found the character name
             q1 = f"UPDATE {self.config['db-tables']['characters']} " \
                  f"SET active = 0 WHERE id='{old_active_id}';"
             self.con.execute(q1)
@@ -251,7 +281,7 @@ class RPGBot(discord.Client):
                  f"SET active=1 WHERE id='{new_active_id}';"
             self.con.execute(q2)
             logger.debug(f'successfully activated {new_active_id}')
-            return True
+            return (True, 'G2G')
 
     def flatten_character(self, owner_id, charname):
         char_json = self.get_char_json(owner_id, charname)
@@ -361,7 +391,7 @@ class RPGBot(discord.Client):
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(
-    filename='discord.log', encoding='utf-8', mode='w',
+    filename=LOG_PATH / 'discord.log', encoding='utf-8', mode='w',
 )
 handler.setFormatter(
     logging.Formatter(
