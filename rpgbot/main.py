@@ -326,7 +326,7 @@ class RPGBot(discord.Client):
         logger.info(f'requesting character json from {valid_uri}')
         resp = requests.get(
             valid_uri, headers={
-                'User-Agent': self.config['DEFAULT']['user_agent'],
+                'User-Agent': self.config['pathbuilder']['user_agent'],
             },
         )
         resp.raise_for_status()
