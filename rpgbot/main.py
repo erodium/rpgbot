@@ -14,23 +14,6 @@ from config import ROOT_DIR, CONFIG_FILENAME, DB_PATH, ASSETS_PATH
 from utils import db_name
 
 
-def connect_to_db(config):
-    dbfilename = db_name(config)
-    logger.info(f"Connecting to database at {DB_PATH}/{dbfilename}.")
-    con = sql.connect(DB_PATH / dbfilename)
-    return con
-
-
-def get_greeting():
-    greeting = ""
-    with open(ASSETS_PATH / 'greetings.txt') as f:
-        lines = f.readlines()
-        total_lines = len(lines)
-        linenum = randrange(total_lines)
-        greeting = lines[linenum]
-    return greeting
-
-
 def check_pathbuilder_json_uri(uri):
     pb_url = 'https://pathbuilder2e.com/json.php'
     return_uri = ""
@@ -48,6 +31,23 @@ def check_pathbuilder_json_uri(uri):
         if url == pb_url and param == 'id':
             return uri
     return False
+
+
+def connect_to_db(config):
+    dbfilename = db_name(config)
+    logger.info(f"Connecting to database at {DB_PATH}/{dbfilename}.")
+    con = sql.connect(DB_PATH / dbfilename)
+    return con
+
+
+def get_greeting():
+    greeting = ""
+    with open(ASSETS_PATH / 'greetings.txt') as f:
+        lines = f.readlines()
+        total_lines = len(lines)
+        linenum = randrange(total_lines)
+        greeting = lines[linenum]
+    return greeting
 
 
 def get_quote():
@@ -124,6 +124,13 @@ class RPGBot(discord.Client):
                 greeting = get_greeting().replace("$USER$", message.author.display_name)
                 logger.info(f"Greeting: {greeting}")
                 await message.channel.send(greeting)
+            elif message.content.startswith('$json'):
+                active_char_name = self.get_active_char_from_db(message.author.id)
+                if active_char_name:
+                    result = self.get_char_json(message.author.id, active_char_name)
+                    await message.channel.send(json.dumps(result)[0:2000])
+                else:
+                    await message.channel.send("You don't have an active character.")
             elif message.content.startswith('$list'):
                 characters = self.get_characters_from_db(message.author.id)
                 if len(characters) == 0:
@@ -137,13 +144,16 @@ class RPGBot(discord.Client):
                         else:
                             msg += " \n"
                 await message.channel.send(msg)
-            elif message.content.startswith('$json'):
-                active_char_name = self.get_active_char_from_db(message.author.id)
-                if active_char_name:
-                    result = self.get_char_json(message.author.id, active_char_name)
-                    await message.channel.send(json.dumps(result)[0:2000])
+            elif message.content.startswith('$mode'):
+                parts = message.content.split()
+                if len(parts) > 1:
+                    mode = parts[1]
+                    if mode in ['encounter', 'exploration', 'downtime']:
+                        old = self.game_mode
+                        self.change_game_mode(mode)
+                        await message.channel.send(f'The game mode is now changed from {old} to {mode}.')
                 else:
-                    await message.channel.send("You don't have an active character.")
+                    await message.channel.send(f'Current game mode is: {self.game_mode}')
             elif message.content.startswith('$quote'):
                 quote = get_quote()
                 logger.info(f"Quote: {quote}")
@@ -158,7 +168,7 @@ class RPGBot(discord.Client):
                     await message.channel.send(f"Character {char_json.get('name')} registered.")
                 else:
                     await message.channel.send("Not a valid URL. Please check the !help and try again.")
-            elif message.content.startswith('$r') or message.content.startswith('$roll'):
+            elif message.content.startswith('$roll') or message.content.startswith('$r '):
                 to_roll = message.content.split()[1]
                 result = d20.roll(to_roll)
                 await message.channel.send(result)
@@ -166,52 +176,6 @@ class RPGBot(discord.Client):
                 with open(ASSETS_PATH / 'help.txt') as f:
                     msg = f.read()
                 await message.author.send(msg)
-            elif message.content.startswith('$mode'):
-                parts = message.content.split()
-                if len(parts) > 1:
-                    mode = parts[1]
-                    if mode in ['encounter', 'exploration', 'downtime']:
-                        old = self.game_mode
-                        self.change_game_mode(mode)
-                        await message.channel.send(f'The game mode is now changed from {old} to {mode}.')
-                else:
-                    await message.channel.send(f'Current game mode is: {self.game_mode}')
-
-    def get_game_mode_from_db(self):
-        with self.con:
-            q = f"SELECT value FROM {self.config['db-tables']['gamemode']} WHERE id=1;"
-            val = self.con.execute(q).fetchone()[0]
-        return val
-
-    def get_char_from_pb(self, valid_uri):
-        logger.info(f"requesting character json from {valid_uri}")
-        resp = requests.get(valid_uri, headers={"User-Agent": self.config['DEFAULT']['user_agent']})
-        resp.raise_for_status()
-        char_json = resp.json()
-        if char_json['success']:
-            logger.info(f"Successfully received character json from {valid_uri}")
-            return char_json.get('build')
-        else:
-            logger.error(f"Didn't get a successful json from {valid_uri}")
-            return None
-
-    def register_character(self, uid, char_json):
-        logger.debug(f'Registering character to user {uid} from {char_json}')
-        with self.con:
-            char_name = char_json.get("name")
-            obj_id = f"{uid}_{char_name}"
-            q = f"REPLACE INTO {self.config['db-tables']['characters']}(id, owner, name, raw_json) " \
-                f"VALUES('{obj_id}', {uid}, '{char_name}', '{json.dumps(char_json)}');"
-            self.con.execute(q)
-            self.flatten_character(uid, char_name)
-
-    def get_characters_from_db(self, owner_id):
-        with self.con:
-            q = f"SELECT name, active FROM {self.config['db-tables']['characters']} " \
-                f"WHERE owner={owner_id};"
-            cur = self.con.execute(q)
-            chars = cur.fetchall()
-        return chars
 
     def activate_character(self, char_name, owner_id):
         with self.con:
@@ -239,27 +203,6 @@ class RPGBot(discord.Client):
             logger.debug(f"successfully activated {new_active_id}")
             return True
 
-    def get_active_char_from_db(self, owner_id):
-        with self.con:
-            q = f"SELECT name FROM {self.config['db-tables']['characters']} " \
-                f"WHERE owner={owner_id} AND active=1;"
-            cur = self.con.execute(q)
-            result = cur.fetchall()
-            if len(result) == 0:
-                return None
-            elif len(result) > 1:
-                raise (f"Too many active for {owner_id}!")
-            else:
-                return result[0][0]
-
-    def get_character_info(self, owner_id, active_char_name, field):
-        with self.con:
-            q = f"SELECT {field} FROM {self.config['db-tables']['characters']} " \
-                f"WHERE id='{owner_id}_{active_char_name}';"
-            cur = self.con.execute(q)
-            result = cur.fetchone()[0]
-        return result
-
     def flatten_character(self, owner_id, charname):
         char_json = self.get_char_json(owner_id, charname)
         cols = []
@@ -282,6 +225,31 @@ class RPGBot(discord.Client):
                 f"{update_str} WHERE id='{owner_id}_{charname}';"
             self.con.execute(q)
 
+    def get_active_char_from_db(self, owner_id):
+        with self.con:
+            q = f"SELECT name FROM {self.config['db-tables']['characters']} " \
+                f"WHERE owner={owner_id} AND active=1;"
+            cur = self.con.execute(q)
+            result = cur.fetchall()
+            if len(result) == 0:
+                return None
+            elif len(result) > 1:
+                raise (f"Too many active for {owner_id}!")
+            else:
+                return result[0][0]
+
+    def get_char_from_pb(self, valid_uri):
+        logger.info(f"requesting character json from {valid_uri}")
+        resp = requests.get(valid_uri, headers={"User-Agent": self.config['DEFAULT']['user_agent']})
+        resp.raise_for_status()
+        char_json = resp.json()
+        if char_json['success']:
+            logger.info(f"Successfully received character json from {valid_uri}")
+            return char_json.get('build')
+        else:
+            logger.error(f"Didn't get a successful json from {valid_uri}")
+            return None
+
     def get_char_json(self, owner_id, active_char_name):
         with self.con:
             q = f"SELECT raw_json FROM {self.config['db-tables']['characters']} " \
@@ -289,6 +257,38 @@ class RPGBot(discord.Client):
             cur = self.con.execute(q)
             result = json.loads(cur.fetchone()[0])
         return result
+
+    def get_character_info(self, owner_id, active_char_name, field):
+        with self.con:
+            q = f"SELECT {field} FROM {self.config['db-tables']['characters']} " \
+                f"WHERE id='{owner_id}_{active_char_name}';"
+            cur = self.con.execute(q)
+            result = cur.fetchone()[0]
+        return result
+
+    def get_characters_from_db(self, owner_id):
+        with self.con:
+            q = f"SELECT name, active FROM {self.config['db-tables']['characters']} " \
+                f"WHERE owner={owner_id};"
+            cur = self.con.execute(q)
+            chars = cur.fetchall()
+        return chars
+
+    def get_game_mode_from_db(self):
+        with self.con:
+            q = f"SELECT value FROM {self.config['db-tables']['gamemode']} WHERE id=1;"
+            val = self.con.execute(q).fetchone()[0]
+        return val
+
+    def register_character(self, uid, char_json):
+        logger.debug(f'Registering character to user {uid} from {char_json}')
+        with self.con:
+            char_name = char_json.get("name")
+            obj_id = f"{uid}_{char_name}"
+            q = f"REPLACE INTO {self.config['db-tables']['characters']}(id, owner, name, raw_json) " \
+                f"VALUES('{obj_id}', {uid}, '{char_name}', '{json.dumps(char_json)}');"
+            self.con.execute(q)
+            self.flatten_character(uid, char_name)
 
 
 logger = logging.getLogger('discord')
