@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import configparser
 import sqlite3 as sql
-from config import ROOT_DIR, CONFIG_FILENAME, DB_PATH
+
+from config import CONFIG_FILENAME
+from config import DB_PATH
 from utils import db_name
 
 
@@ -34,19 +38,55 @@ def setup_db(config=None):
                 deity TEXT,
                 keyability TEXT,
                 languages TEXT,
-                ancestryhp INTEGER, classhp INTEGER, bonushp INTEGER, bonushpPerLevel INTEGER, 
-                speed INTEGER, speedBonus INTEGER,
-                str INTEGER, dex INTEGER, con INTEGER, int INTEGER, wis INTEGER, cha INTEGER,
-                classDC INTEGER, 
-                perception INTEGER, fortitude INTEGER, reflex INTEGER, will INTEGER, 
-                heavy INTEGER, medium INTEGER, light INTEGER, unarmored INTEGER, 
-                advanced INTEGER, martial INTEGER, simple INTEGER, unarmed INTEGER, 
-                castingArcane INTEGER, castingDivine INTEGER, castingOccult INTEGER, castingPrimal INTEGER, 
-                acrobatics INTEGER, arcana INTEGER, athletics INTEGER, crafting INTEGER, deception INTEGER, 
-                diplomacy INTEGER, intimidation INTEGER, medicine INTEGER, nature INTEGER, occultism INTEGER, 
-                performance INTEGER, religion INTEGER, society INTEGER, stealth INTEGER, survival INTEGER, 
-                thievery INTEGER, 
-                acProfBonus INTEGER, acAbilityBonus INTEGER, acItemBonus INTEGER, acTotal INTEGER,
+                ancestryhp INTEGER,
+                classhp INTEGER,
+                bonushp INTEGER,
+                bonushpPerLevel INTEGER,
+                speed INTEGER,
+                speedBonus INTEGER,
+                str INTEGER,
+                dex INTEGER,
+                con INTEGER,
+                int INTEGER,
+                wis INTEGER,
+                cha INTEGER,
+                classDC INTEGER,
+                perception INTEGER,
+                fortitude INTEGER,
+                reflex INTEGER,
+                will INTEGER,
+                heavy INTEGER,
+                medium INTEGER,
+                light INTEGER,
+                unarmored INTEGER,
+                advanced INTEGER,
+                martial INTEGER,
+                simple INTEGER,
+                unarmed INTEGER,
+                castingArcane INTEGER,
+                castingDivine INTEGER,
+                castingOccult INTEGER,
+                castingPrimal INTEGER,
+                acrobatics INTEGER,
+                arcana INTEGER,
+                athletics INTEGER,
+                crafting INTEGER,
+                deception INTEGER,
+                diplomacy INTEGER,
+                intimidation INTEGER,
+                medicine INTEGER,
+                nature INTEGER,
+                occultism INTEGER,
+                performance INTEGER,
+                religion INTEGER,
+                society INTEGER,
+                stealth INTEGER,
+                survival INTEGER,
+                thievery INTEGER,
+                acProfBonus INTEGER,
+                acAbilityBonus INTEGER,
+                acItemBonus INTEGER,
+                acTotal INTEGER,
                 active INTEGER
             );
         """)
@@ -58,7 +98,8 @@ def setup_db(config=None):
         """)
         con.commit()
 
-    msg = f"INSERT INTO {config['db-tables']['users']} (id, name) values(?, ?)"
+    msg = f"INSERT INTO {config['db-tables']['users']} " \
+          f'(id, name) values(?, ?)'
     data = [
         (165885524580630528, 'lowerlight'),
     ]
@@ -67,18 +108,26 @@ def setup_db(config=None):
         con.commit()
 
     msg = f"""
-        INSERT INTO {config['db-tables']['characters']} (id, owner, name, str, dex, con, int, wis, cha, active) 
+        INSERT INTO {config['db-tables']['characters']}
+        (id, owner, name, str, dex, con, int, wis, cha, active)
         values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     data = [
-        ("165885524580630528_Balls", 165885524580630528, 'Balls', 8, 9, 10, 11, 12, 13, 1),
-        ("165885524580630528_Spindle", 165885524580630528, 'Spindle', 13, 12, 11, 10, 9, 8, 0),
+        (
+            '165885524580630528_Balls', 165885524580630528,
+            'Balls', 8, 9, 10, 11, 12, 13, 1,
+        ),
+        (
+            '165885524580630528_Spindle', 165885524580630528,
+            'Spindle', 13, 12, 11, 10, 9, 8, 0,
+        ),
     ]
     with con:
         con.executemany(msg, data)
         con.commit()
 
-    msg = f"INSERT INTO {config['db-tables']['gamemode']} (id, value) values(?, ?)"
+    msg = f"INSERT INTO {config['db-tables']['gamemode']} " \
+          f'(id, value) values(?, ?)'
     data = [
         (1, 'downtime'),
     ]

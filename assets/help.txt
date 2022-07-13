@@ -15,7 +15,3 @@ $register IDNUM - add your Pathbuilder character to the database. You can get th
 $register URL - add your Pathbuilder character to the database. You can get the URL from Pathbuilder's Menu->Export JSON->View JSON
 $roll NdX+MOD - Roll N dice with X sides, add MOD to the result. Follows the d20 syntax https://d20.readthedocs.io/en/latest/start.html#numbers
 $quote - Do you like quotes?
-
-CHANGELOG
-2022-05-25 - Added $active, $activate, $char, $list, $register, and $quote commands. Changed bot to only respond to $ (no !).
-

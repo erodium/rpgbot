@@ -1,0 +1,2 @@
+CHANGELOG
+2022-05-25 - Added $active, $activate, $char, $list, $register, and $quote commands. Changed bot to only respond to $ (no !).
