@@ -7,6 +7,7 @@ Commands:
 $active - print your currently active character
 $activate NAME - make character NAME your active character.
 $char THING - Get the stored value for THING for your active character. Example: $char str will get the Strength value for the active character.
+$check <field> - Make a check: perception, acrobatics, arcana, athletics, crafting, deception, diplomacy, intimidation, medicine, nature, occultism, performance, religion, society, stealth, survival, thievery
 $hello - greet the bot
 $help - See this message.
 $json - get the raw json for your character
@@ -15,6 +16,5 @@ $mode - Find out what mode the game is currently in, whether downtime, explorati
 $register IDNUM - add your Pathbuilder character to the database. You can get the IDNUM from Pathbuilder's Menu->Export JSON.
 $register URL - add your Pathbuilder character to the database. You can get the URL from Pathbuilder's Menu->Export JSON->View JSON
 $roll NdX+MOD - Roll N dice with X sides, add MOD to the result. Follows the d20 syntax https://d20.readthedocs.io/en/latest/start.html#numbers
-$check <field> - Make a check: perception, acrobatics, arcana, athletics, crafting, deception, diplomacy, intimidation, medicine, nature, occultism, performance, religion, society, stealth, survival, thievery
-$st (will|ref|fort) - Make a willpower, reflex, or fortitude saving throw
 $quote - Do you like quotes?
+$st (will|ref|fort) - Make a willpower, reflex, or fortitude saving throw
