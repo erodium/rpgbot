@@ -3,8 +3,8 @@ from __future__ import annotations
 import configparser
 import sqlite3 as sql
 
-from config import CONFIG_FILENAME
-from config import DB_PATH
+from constants import CONFIG_FILENAME
+from constants import DB_PATH
 from utils import db_name
 
 
@@ -12,6 +12,7 @@ def setup_db(config=None):
     if not config:
         config = configparser.ConfigParser()
         config.read(CONFIG_FILENAME)
+    DB_PATH.mkdir(parents=True, exist_ok=True)
     con = sql.connect(DB_PATH / db_name(config))
 
     with con:

@@ -3,19 +3,18 @@ from __future__ import annotations
 import configparser
 import json
 import logging
-import os
 import sqlite3 as sql
 from random import randrange
 
 import d20
 import discord
 import requests
-from config import ASSETS_PATH
-from config import CONFIG_FILENAME
-from config import DB_PATH
-from config import LIST_OF_CHECKS
-from config import LOG_PATH
-from dotenv import load_dotenv
+from aws import get_secret
+from constants import ASSETS_PATH
+from constants import CONFIG_FILENAME
+from constants import DB_PATH
+from constants import LIST_OF_CHECKS
+from constants import LOG_PATH
 from setup_db import setup_db
 from utils import db_name
 
@@ -77,6 +76,7 @@ class RPGBot(discord.Client):
         intents = discord.Intents.default()
         intents.message_content = True
         super().__init__(intents=intents, **kwargs)
+        self.token = get_secret()
 
     def change_game_mode(self, new_mode=None):
         if new_mode:
@@ -430,6 +430,5 @@ handler.setFormatter(
 )
 logger.addHandler(handler)
 
-load_dotenv()
 bot = RPGBot()
-bot.run(os.getenv('TOKEN'))
+bot.run(bot.token)
