@@ -9,14 +9,15 @@ from random import randrange
 import d20
 import discord
 import requests
-from aws import get_secret
-from constants import ASSETS_PATH
-from constants import CONFIG_FILENAME
-from constants import DB_PATH
-from constants import LIST_OF_CHECKS
-from constants import LOG_PATH
-from setup_db import setup_db
-from utils import db_name
+
+from rpgbot.aws import get_secret
+from rpgbot.constants import ASSETS_PATH
+from rpgbot.constants import CONFIG_FILENAME
+from rpgbot.constants import DB_PATH
+from rpgbot.constants import LIST_OF_CHECKS
+from rpgbot.constants import LOG_PATH
+from rpgbot.setup_db import setup_db
+from rpgbot.utils import db_name
 
 
 def check_pathbuilder_json_uri(uri):
@@ -420,6 +421,7 @@ class RPGBot(discord.Client):
 
 logger = logging.getLogger('discord')
 logger.setLevel(logging.DEBUG)
+LOG_PATH.mkdir(exist_ok=True, parents=True)
 handler = logging.FileHandler(
     filename=LOG_PATH / 'discord.log', encoding='utf-8', mode='w',
 )

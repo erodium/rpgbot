@@ -3,9 +3,9 @@ from __future__ import annotations
 import configparser
 import sqlite3 as sql
 
-from constants import CONFIG_FILENAME
-from constants import DB_PATH
-from utils import db_name
+from rpgbot.constants import CONFIG_FILENAME
+from rpgbot.constants import DB_PATH
+from rpgbot.utils import db_name
 
 
 def setup_db(config=None):
