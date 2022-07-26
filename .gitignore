@@ -1,4 +1,5 @@
 .env
 .idea
-rpgbot/discord.log
 *.db
+logs
+data

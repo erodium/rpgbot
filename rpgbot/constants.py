@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).parents[1]
 ASSETS_PATH = ROOT_DIR / 'assets'
 CONFIG_FILENAME = ROOT_DIR / 'config.ini'
 DB_PATH = ROOT_DIR / 'data'
-LOG_PATH = ROOT_DIR / 'rpgbot'
+LOG_PATH = ROOT_DIR / 'logs'
 
 # Other items
 LIST_OF_CHECKS = [
