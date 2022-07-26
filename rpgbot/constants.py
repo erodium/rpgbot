@@ -13,10 +13,8 @@ LOG_PATH = ROOT_DIR / 'logs'
 
 # Other items
 LIST_OF_CHECKS = [
-    'perception', 'acrobatics', 'arcana', 'athletics', 'crafting',
-    'deception', 'diplomacy', 'intimidation', 'medicine', 'nature',
-    'occultism', 'performance', 'religion', 'society', 'stealth', 'survival',
-    'thievery',
+    'perception', 'acrobatics', 'arcana', 'athletics', 'crafting', 'deception', 'diplomacy', 'intimidation',
+    'medicine', 'nature', 'occultism', 'performance', 'religion', 'society', 'stealth', 'survival', 'thievery',
 ]
 
 instance_id = 'i-0b77ab0785378a0eb'
