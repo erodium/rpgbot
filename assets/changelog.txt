@@ -1,4 +1,5 @@
 CHANGELOG
+2022-07-26 - Added $foundry commands - you can now control the Foundry instance from Discord. See $help
 2022-07-25 - RPGbot is now persistent. It exists online, and is available 24/7.
 2022-07-12 - Added $check, $st, $json,
 2022-05-25 - Added $active, $activate, $char, $list, $register, and $quote commands. Changed bot to only respond to $ (no !).
