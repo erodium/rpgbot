@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sqlite3 as sql
+from logging.handlers import RotatingFileHandler
 from random import randrange
 
 import d20
@@ -406,13 +407,18 @@ class RPGBot(discord.Client):
 
 
 LOG_PATH.mkdir(exist_ok=True, parents=True)
-logging.basicConfig(
-    filename=LOG_PATH / 'rpgbot.log',
-    filemode='w',
-    level=logging.DEBUG,
-    format='%(asctime)s:%(levelname)s:%(name)s: %(message)s',
+log_name = LOG_PATH / 'rpgbot.log'
+
+log_formatter = logging.Formatter(
+    '%(asctime)s:%(levelname)s:%(name)s: %(message)s',
 )
+handler = RotatingFileHandler(log_name, maxBytes=1024, backupCount=1)
+handler.setFormatter(log_formatter)
+handler.setLevel(logging.INFO)
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 bot = RPGBot()
 bot.run(bot.token)
