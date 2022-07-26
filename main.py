@@ -3,14 +3,19 @@ from __future__ import annotations
 import configparser
 import json
 import logging
+import os
 import sqlite3 as sql
 from random import randrange
 
 import d20
 import discord
 import requests
+from dotenv import load_dotenv
 
+from rpgbot.aws import get_foundry_status
 from rpgbot.aws import get_secret
+from rpgbot.aws import turn_off_foundry
+from rpgbot.aws import turn_on_foundry
 from rpgbot.constants import ASSETS_PATH
 from rpgbot.constants import CONFIG_FILENAME
 from rpgbot.constants import DB_PATH
@@ -76,8 +81,14 @@ class RPGBot(discord.Client):
         print(f'Setting game mode to {self.game_mode}.')
         intents = discord.Intents.default()
         intents.message_content = True
+        if self.config['secret']['location'] == 'aws':
+            self.token = get_secret()
+        elif self.config['secret']['location'] == 'env':
+            load_dotenv()
+            self.token = os.getenv('TOKEN')
+        else:
+            raise Exception('Invalid secret location')
         super().__init__(intents=intents, **kwargs)
-        self.token = get_secret()
 
     def change_game_mode(self, new_mode=None):
         if new_mode:
@@ -162,6 +173,29 @@ class RPGBot(discord.Client):
                     message.author.id,
                 )
                 self.flatten_character(message.author.id, active_char_name)
+            elif message.content.startswith('$foundry '):
+                parts = message.content.split()
+                if parts[1] == 'start':
+                    if get_foundry_status() != 'running':
+                        await message.channel.send(
+                            'Starting Foundry. This could take a minute.',
+                        )
+                        resp = turn_on_foundry()
+                    else:
+                        resp = 'Foundry is already running.'
+                elif parts[1] == 'status':
+                    stat = get_foundry_status()
+                    resp = f'The Foundry instance is currently {stat}'
+                elif parts[1] == 'stop':
+                    if get_foundry_status() == 'running':
+                        await message.channel.send('Stopping Foundry')
+                        resp = turn_off_foundry()
+                    else:
+                        resp = 'The Foundry instance is not running.'
+                else:
+                    resp = 'The only supported options are ' \
+                           '`start`, `stop`, or `status`.'
+                await message.channel.send(resp)
             elif message.content == '$hello' \
                     or message.content.startswith('$hello '):
                 greeting = get_greeting().replace(
@@ -419,18 +453,14 @@ class RPGBot(discord.Client):
             self.flatten_character(uid, char_name)
 
 
-logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
 LOG_PATH.mkdir(exist_ok=True, parents=True)
-handler = logging.FileHandler(
-    filename=LOG_PATH / 'discord.log', encoding='utf-8', mode='w',
+logging.basicConfig(
+    filename=LOG_PATH / 'rpgbot.log',
+    filemode='w',
+    level=logging.DEBUG,
+    format='%(asctime)s:%(levelname)s:%(name)s: %(message)s',
 )
-handler.setFormatter(
-    logging.Formatter(
-        '%(asctime)s:%(levelname)s:%(name)s: %(message)s',
-    ),
-)
-logger.addHandler(handler)
+logger = logging.getLogger(__name__)
 
 bot = RPGBot()
 bot.run(bot.token)

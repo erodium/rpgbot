@@ -18,3 +18,5 @@ LIST_OF_CHECKS = [
     'occultism', 'performance', 'religion', 'society', 'stealth', 'survival',
     'thievery',
 ]
+
+instance_id = 'i-0b77ab0785378a0eb'

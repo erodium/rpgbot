@@ -2,20 +2,26 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
+from time import sleep
 
 import boto3
 from botocore.exceptions import ClientError
 
+from rpgbot.constants import instance_id
 
-def get_secret():
+region_name = 'us-east-1'
+logger = logging.getLogger(__name__)
+
+
+def get_secret(region=region_name):
     secret_name = 'discord/token/rpgbot'
-    region_name = 'us-east-1'
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
     client = session.client(
         service_name='secretsmanager',
-        region_name=region_name,
+        region_name=region,
     )
 
     # In this sample we only handle the specific exceptions
@@ -60,4 +66,90 @@ def get_secret():
             )
             return json.loads(decoded_binary_secret).get('token')
 
-    # Your code goes here.
+
+def turn_on_foundry(region=region_name):
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='ec2',
+        region_name=region,
+    )
+    logger.info(f'Starting the Foundry Instance {instance_id}.')
+    client.start_instances(
+        InstanceIds=[
+            instance_id,
+        ],
+    )
+    repetition = 0
+    while repetition <= 12:
+        sleep(10)
+        status_response_dict = client.describe_instance_status(
+            InstanceIds=[
+                instance_id,
+            ],
+            IncludeAllInstances=True,
+        )
+        instance_response = status_response_dict.get('InstanceStatuses')[0]
+        instance_status = instance_response.get('InstanceState').get('Code')
+        if instance_status > 0:
+            if instance_status > 16:
+                return 'There was a problem starting the instance. ' \
+                       'Please inform @lowerlight'
+            else:
+                return 'Foundry has been started. ' \
+                       'Visit https://foundry.caprica.us'
+        repetition += 1
+    return "It's taking a while to start the instance. " \
+           'Please inform @lowerlight'
+
+
+def turn_off_foundry(region=region_name):
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='ec2',
+        region_name=region,
+    )
+    logger.info(f'Stopping the Foundry instance {instance_id}.')
+    client.stop_instances(
+        InstanceIds=[
+            instance_id,
+        ],
+    )
+    repetition = 0
+    while repetition <= 12:
+        sleep(10)
+        status_response_dict = client.describe_instance_status(
+            InstanceIds=[
+                instance_id,
+            ],
+            IncludeAllInstances=True,
+        )
+        instance_response = status_response_dict.get('InstanceStatuses')[0]
+        instance_status = instance_response.get('InstanceState').get('Code')
+        if instance_status > 16:
+            return 'Foundry has been stopped.'
+        repetition += 1
+    return "It's taking a while to stop the instance. " \
+           'Please inform @lowerlight'
+
+
+def get_foundry_status(region=region_name):
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='ec2',
+        region_name=region,
+    )
+    status_response_dict = client.describe_instance_status(
+        InstanceIds=[
+            instance_id,
+        ],
+        IncludeAllInstances=True,
+    )
+    logger.debug(f'Foundry Status: {json.dumps(status_response_dict)}')
+    instance_responses = status_response_dict.get('InstanceStatuses')
+    if len(instance_responses) > 0:
+        instance_status = instance_responses[0].get(
+            'InstanceState',
+        ).get('Name')
+    else:
+        instance_status = 'Instance does not exist - inform @lowerlight'
+    return instance_status

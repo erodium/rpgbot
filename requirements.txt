@@ -1,5 +1,7 @@
-boto3
-d20
+boto3~=1.24.37
+botocore~=1.27.37
+d20~=1.1.2
 discord==1.7.3
 discord.py @ git+https://github.com/Rapptz/discord.py@77baa06a99b00b50d24398714bce40fcda1fa0c2
-requests
+python-dotenv
+requests~=2.28.1
